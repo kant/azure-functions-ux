@@ -3,26 +3,44 @@ import FeatureDescriptionCard from '../../../components/feature-description-card
 import { IDropdownOption } from 'office-ui-fabric-react';
 import { Formik, FormikActions, FormikProps, Field } from 'formik';
 import { ResourceGroup } from '../../../models/resource-group';
-import { ArmObj, Site, ArmArray } from '../../../models/WebAppModels';
+import { ArmObj, Site, ArmArray, ServerFarm } from '../../../models/WebAppModels';
 import CreateOrSelect, { CreateOrSelectFormValues } from '../../../components/form-controls/CreateOrSelect';
 
 export interface ChangeAppPlanProps {
-  // site: SiteState;
-  // resourceGroups: ResourceGroupsState;
-  site: ArmObj<Site>;
+  site: ArmObj<Site> | null;
   resourceGroups: ArmArray<ResourceGroup> | null;
+  serverFarms: ArmObj<ServerFarm>[] | null;
 }
 
 export interface ChangeAppPlanFormValues {
   resourceGroupInfo: CreateOrSelectFormValues<ArmObj<ResourceGroup>>;
+  serverFarmInfo: CreateOrSelectFormValues<ArmObj<ServerFarm>>;
 }
 
 const onSubmit = async (values: any, actions: FormikActions<any>) => {
   console.log('submit!');
 };
 
+const getDropdownOptions = (objs: ArmObj<any>[]) => {
+  let options: IDropdownOption[] = [];
+  if (objs) {
+    for (const obj of objs) {
+      options = [
+        ...options,
+        {
+          key: obj.id,
+          text: obj.name,
+          data: obj,
+        },
+      ];
+    }
+  }
+
+  return options;
+};
+
 const ChangeAppPlan: React.SFC<ChangeAppPlanProps> = props => {
-  const { resourceGroups } = props;
+  const { resourceGroups, serverFarms } = props;
 
   const formValues: ChangeAppPlanFormValues = {
     resourceGroupInfo: {
@@ -31,29 +49,28 @@ const ChangeAppPlan: React.SFC<ChangeAppPlanProps> = props => {
       newValue: '',
       loading: !resourceGroups,
     },
+    serverFarmInfo: {
+      newOrExisting: 'new',
+      existingValue: null,
+      newValue: '',
+      loading: !serverFarms,
+    },
   };
 
-  let rgOptions: IDropdownOption[] = [];
-  if (resourceGroups) {
-    for (const rg of resourceGroups.value) {
-      rgOptions = [
-        ...rgOptions,
-        {
-          key: rg.id,
-          text: rg.name,
-          data: rg,
-        },
-      ];
-    }
-  }
+  const rgOptions = getDropdownOptions((resourceGroups as ArmArray<ResourceGroup>).value);
+  const serverFarmOptions = getDropdownOptions(serverFarms as ArmObj<ServerFarm>[]);
 
   return (
     <>
       <Formik initialValues={formValues} onSubmit={onSubmit}>
         {(formProps: FormikProps<ChangeAppPlanFormValues>) => (
           <form>
-            <h1>Change app plan inner component</h1>
-            <FeatureDescriptionCard name="foo" description="my description!!!" iconUrl="/images/app-service-plan.svg" />
+            <FeatureDescriptionCard
+              name="Changeplandescription"
+              description="Change app service plan description"
+              iconUrl="/images/app-service-plan.svg"
+            />
+
             <Field
               name="resourceGroupInfo"
               component={CreateOrSelect}
@@ -61,6 +78,15 @@ const ChangeAppPlan: React.SFC<ChangeAppPlanProps> = props => {
               label="Target Resource Group"
               id="resource-group-picker"
               options={rgOptions}
+            />
+
+            <Field
+              name="serverFarmInfo"
+              component={CreateOrSelect}
+              fullpage
+              label="Target Server Farm"
+              id="server-farm-picker"
+              options={serverFarmOptions}
             />
           </form>
         )}

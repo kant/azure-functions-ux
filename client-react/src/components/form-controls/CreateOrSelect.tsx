@@ -1,14 +1,14 @@
-import * as React from 'react';
+import React, { useContext } from 'react';
 import { FieldProps } from 'formik';
 import get from 'lodash-es/get';
-import { connect } from 'react-redux';
-import { ThemeExtended } from '../../theme/SemanticColorsExtended';
 import { ChoiceGroup, IChoiceGroupProps, IChoiceGroupOption } from 'office-ui-fabric-react/lib/ChoiceGroup';
 import { TextField as OfficeTextField } from 'office-ui-fabric-react/lib/TextField';
 import { Dropdown as OfficeDropdown, IDropdownProps, IDropdownOption } from 'office-ui-fabric-react/lib/Dropdown';
-
 import { style } from 'typestyle';
 import { Label } from 'office-ui-fabric-react';
+import { ThemeContext } from '../../ThemeContext';
+import { dropdownStyleOverrides } from './formControl.override.styles';
+import { useWindowSize } from 'react-use';
 
 export interface CreateOrSelectFormValues<T> {
   newOrExisting: 'new' | 'existing';
@@ -22,22 +22,18 @@ interface CreateOrSelectProps {
   id: string;
   subLabel?: string;
 }
-interface CreateOrSelectStateProps {
-  theme: ThemeExtended;
-}
 
 const ChioceGroupStyle = style({
   display: 'inline-block',
   width: 'calc(100%-200px)',
 });
 
-const CreateOrSelect = (
-  props: FieldProps<CreateOrSelectFormValues<any>> & IChoiceGroupProps & IDropdownProps & CreateOrSelectProps & CreateOrSelectStateProps
-) => {
-  const { field, form, options, fullpage, theme, label } = props;
-  props.options;
+const CreateOrSelect = (props: FieldProps<CreateOrSelectFormValues<any>> & IChoiceGroupProps & IDropdownProps & CreateOrSelectProps) => {
+  const { field, form, options, label } = props;
   const dirty = get(form.initialValues, field.name, null) !== field.value;
   const formValues = field.value as CreateOrSelectFormValues<any>;
+  const theme = useContext(ThemeContext);
+  const { width } = useWindowSize();
 
   const createNewRadioOptions: IChoiceGroupOption[] = [
     {
@@ -64,6 +60,8 @@ const CreateOrSelect = (
 
   const errorMessage = get(form.errors, field.name, '') as string;
 
+  const fullpage = width > 1000;
+
   let textOrDropdown: JSX.Element = <span />;
   if (formValues.newOrExisting === 'existing') {
     textOrDropdown = (
@@ -74,27 +72,7 @@ const CreateOrSelect = (
         onChange={onChangeDropdown}
         onBlur={field.onBlur}
         errorMessage={errorMessage}
-        styles={{
-          title: dirty && {
-            borderColor: theme.semanticColors.controlDirtyOutline,
-          },
-          errorMessage: [
-            fullpage && {
-              paddingLeft: '200px',
-            },
-          ],
-          dropdown: [
-            fullpage && {
-              display: 'inline-block',
-            },
-            dirty && {
-              selectors: {
-                ['&:focus .ms-Dropdown-title']: [{ borderColor: theme.semanticColors.controlDirtyOutline }],
-                ['&:hover .ms-Dropdown-title']: [{ borderColor: theme.semanticColors.controlDirtyOutline }],
-              },
-            },
-          ],
-        }}
+        styles={dropdownStyleOverrides(dirty, theme, fullpage)} // etodo: is this right?
       />
     );
   } else {
@@ -120,13 +98,4 @@ const CreateOrSelect = (
   );
 };
 
-const mapStateToProps = state => {
-  return {
-    theme: state.portalService && state.portalService.theme,
-  };
-};
-
-export default connect(
-  mapStateToProps,
-  null
-)(CreateOrSelect);
+export default CreateOrSelect;
